@@ -1,6 +1,7 @@
 package com.dji.sdk.sample.internal.view;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -29,6 +30,11 @@ import com.dji.sdk.sample.internal.utils.GeneralUtils;
 import com.dji.sdk.sample.internal.utils.ToastUtils;
 import com.squareup.otto.Subscribe;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import dji.common.error.DJIError;
@@ -84,6 +90,69 @@ public class MainContent extends RelativeLayout {
         super.onFinishInflate();
         DJISampleApplication.getEventBus().register(this);
         initUI();
+    }
+
+
+    private class pgsqlcon extends AsyncTask<Void, Void, Void> {
+
+        public pgsqlcon() {
+            super();
+        }
+
+        public String userId;
+        public String userName;
+        public String timeStaamp;
+        public String tagTime;
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Connection conn = null;
+            Statement st = null;
+
+            try {
+                Class.forName("org.postgresql.Driver");
+
+                System.out.println("Connecting to database...");
+                conn = DriverManager.getConnection("jdbc:postgresql://10.201.56.47:5432/camera_game_db", "postgres", "notarealpassword");
+
+                System.out.println("Creating statement...");
+                st = conn.createStatement();
+                String sql;
+                sql = "SELECT userid, username, timestamp, tagtime FROM game WHERE username='bobby';";
+                ResultSet rs = st.executeQuery(sql);
+
+                while (rs.next()) {
+                    //Retrieve by column name
+                    userId = rs.getString("userid");
+                    userName = rs.getString("username");
+                    timeStaamp= rs.getString("timestamp");
+                    tagTime = rs.getString("tagtime");
+                }
+                rs.close();
+                st.close();
+                conn.close();
+            } catch (SQLException se) {
+                //Handle errors for JDBC
+                se.printStackTrace();
+            } catch (Exception e) {
+                //Handle errors for Class.forName
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (st != null)
+                        st.close();
+                } catch (SQLException se2) {
+                }// nothing we can do
+                try {
+                    if (conn != null)
+                        conn.close();
+
+                } catch (SQLException se) {
+                    se.printStackTrace();
+                }//end finally try
+            }
+            return null;
+        }
     }
 
     private void initUI() {
@@ -164,6 +233,20 @@ public class MainContent extends RelativeLayout {
                 DJISDKManager.getInstance()
                         .getSDKVersion()));
 
+        pgsqlcon pgcon = new pgsqlcon();
+        pgcon.execute();
+
+        ((TextView) findViewById(R.id.text_infoSqlUserID)).setText(getResources().getString(R.string.userId,
+                pgcon.userId));
+
+        ((TextView) findViewById(R.id.text_infoSqlUserName)).setText(getResources().getString(R.string.userName,
+                pgcon.userName));
+
+        ((TextView) findViewById(R.id.text_infoSqlTimeStamp)).setText(getResources().getString(R.string.timeStaamp,
+                pgcon.timeStaamp));
+
+        ((TextView) findViewById(R.id.text_infoSqlTagTime)).setText(getResources().getString(R.string.tagTime,
+                pgcon.tagTime));
 
     }
 

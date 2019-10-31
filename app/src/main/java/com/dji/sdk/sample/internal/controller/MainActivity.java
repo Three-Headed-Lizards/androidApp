@@ -106,62 +106,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private class pgsqlcon extends AsyncTask<Void, Void, Void> {
 
-        public pgsqlcon() {
-            super();
-        }
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            Connection conn = null;
-            Statement st = null;
-
-            try {
-                Class.forName("org.postgresql.Driver");
-
-                System.out.println("Connecting to database...");
-                conn = DriverManager.getConnection("jdbc:postgresql://database-1.cithwlolorqu.us-west-1.rds.amazonaws.com:5432/database-1", "root", "rootroot");
-
-                System.out.println("Creating statement...");
-                st = conn.createStatement();
-                String sql;
-                sql = "SELECT  userId, userName, timeStamp, tagTime FROM softDevTest";
-                ResultSet rs = st.executeQuery(sql);
-
-                //STEP 5: Extract data from result set
-                while (rs.next()) {
-                    //Retrieve by column name
-                    userId = rs.getString("userId");
-                    userName = rs.getString("userName");
-                    timeStaamp= rs.getString("timeStamp");
-                    tagTime = rs.getString("tagTime");
-                }
-                //STEP 6: Clean-up environment
-                rs.close();
-                st.close();
-                conn.close();
-            } catch (SQLException se) {
-                //Handle errors for JDBC
-                se.printStackTrace();
-            } catch (Exception e) {
-                //Handle errors for Class.forName
-                e.printStackTrace();
-            } finally {
-                try {
-                    if (st != null)
-                        st.close();
-                } catch (SQLException se2) {
-                }// nothing we can do
-                try {
-                    if (conn != null)
-                        conn.close();
-                } catch (SQLException se) {
-                    se.printStackTrace();
-                }//end finally try
-            }
-        }
-    }
 
     //region Life-cycle
     @Override
@@ -169,23 +114,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         checkAndRequestPermissions();
         DJISampleApplication.getEventBus().register(this);
-
-
-        pgsqlcon pgcon = new pgsqlcon();
-        pgcon.execute();
-
-
-        ((TextView) findViewById(R.id.text_infoSqlUserID)).setText(getResources().getString(R.string.userId,
-                userId));
-
-        ((TextView) findViewById(R.id.text_infoSqlUserName)).setText(getResources().getString(R.string.userName,
-                userName));
-
-        ((TextView) findViewById(R.id.text_infoSqlTimeStamp)).setText(getResources().getString(R.string.timeStaamp,
-                timeStaamp));
-
-        ((TextView) findViewById(R.id.text_infoSqlTagTime)).setText(getResources().getString(R.string.tagTime,
-                tagTime));
 
         setContentView(R.layout.activity_main);
 
